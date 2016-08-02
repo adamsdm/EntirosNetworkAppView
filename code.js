@@ -105,7 +105,9 @@ function initCy( then ){
 
 
 var infoTemplate = Handlebars.compile([
-  '<p class="ac-name">{{id}}</p>',   
+  '<p class="ac-name"> Name: {{id}}</p>',
+  '{{#if connectedNodes}}<p class="ac-more"><i class="fa fa-cog"></i> Integrated with: {{connectedNodes}}</p>{{/if}}',    
+
 ].join(''));
 
 
@@ -211,8 +213,9 @@ $('#addProcess').on('click', function(){
   addProcess();
 })
 $('#debug').on('click', function(){
-  readData2(graphP.responseJSON[1]);
-  cy.layout(theLayout);
+  // readData2(graphP.responseJSON[1]);
+  // cy.layout(theLayout);
+  
 })
 
 $('#clear').on('click', function(){
@@ -310,8 +313,12 @@ function readData2( data ){
   //Add application connections
   //for each edge
   for(var i=0; i<data.edges.length; i++){
-    var sourceConPosX = cy.$('#'+String(data.edges[i].source)).position().x;
-    var targetConPosX = cy.$('#'+String(data.edges[i].target)).position().x;
+
+    var dataSource = data.edges[i].source;
+    var dataTarget = data.edges[i].target;
+
+    var sourceConPosX = cy.$('#'+String(dataSource)).position().x;
+    var targetConPosX = cy.$('#'+String(dataTarget)).position().x;
 
     //Connection points
     incMidBarWidth();
@@ -319,11 +326,30 @@ function readData2( data ){
       { group: "nodes", data: { type: 'conPointNode', id:'sConP'+i}, position: {x: sourceConPosX, y: 100-i*15 } },
       { group: "nodes", data: { type: 'conPointNode', id:'tConP'+i}, position: {x: targetConPosX, y: 100-i*15 } },
 
-      { group: "edges", data: { source: data.edges[i].source, target: 'sConP'+i, type: 'goodIntEdge' } },
+      { group: "edges", data: { source: dataSource, target: 'sConP'+i, type: 'goodIntEdge' } },
       { group: "edges", data: { source: 'sConP'+i, target: 'tConP'+i, type: 'goodIntEdge' } },
-      { group: "edges", data: { source: 'tConP'+i, target: data.edges[i].target, type: 'goodIntEdge' } },
-      { group: "edges", data: { source: data.edges[i].source, target: data.edges[i].target, type: 'spaghEdge' } }
+      { group: "edges", data: { source: 'tConP'+i, target: dataTarget, type: 'goodIntEdge' } },
+      { group: "edges", data: { source: dataSource, target: dataTarget, type: 'spaghEdge' } }
     ]);
+  }
+
+
+
+  //Add data to each app containing connected targets
+  var applications = cy.$('node[type="app"]');
+  for(var i=0; i<applications.length; i++){
+    var connectedEdges = applications[i].connectedEdges("edge[type='spaghEdge']");
+
+    applications[i].data().connectedNodes ='';
+
+    //loop through each connected edge
+    for(var j=0; j<connectedEdges.length; j++){
+      //Check if current edge target is current node, if not; add target
+      if(connectedEdges[j].target().data().id!=applications[i].data().id)
+        applications[i].data().connectedNodes+=connectedEdges[j].target().data().id+', ';
+      if(connectedEdges[j].source().data().id!=applications[i].data().id)
+        applications[i].data().connectedNodes+=connectedEdges[j].source().data().id+', ';
+    }
   }
 }
 

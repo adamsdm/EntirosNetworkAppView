@@ -23,6 +23,7 @@ node[type="eShape"]{
   background-color: #e8e8e8;
   width: 30;
   height: 30;
+  z-index: 0;
 }
 
 node[type="app"]{
@@ -35,29 +36,51 @@ node[type="app"]{
     text-halign: left;
 }
 
+node[type="conPointNode"]{
+  width: 10px;
+  height: 10px;
+  background-color: black;
+  label: ;
+}
+
 edge[type="eShape"]{
   curve-style: haystack;
   width: 30px;
   line-color: #e8e8e8;
 }
 
+edge[type="spaghEdge"]{
+  curve-style: unbundled-bezier;
+  width:1px;
+  control-point-distances: 50;
+  control-point-weight: .5;
+  line-color: red;
+}
+
+edge[type="goodIntEdge"]{
+  curve-style: haystack;
+  width:1px;
+  line-color: #a9c742;
+}
+
 #a{
-  label:Experience;
   text-valign: center;
   text-halign: left;
   text-margin-x: -20;
 }
 
 #b{
-  label:Process;
   text-valign: center;
   text-halign: left;
   text-margin-x: -20;
 }
 
 #c{
-  label: System;
   text-valign: center;
   text-halign: left;
   text-margin-x: -20;
+}
+
+.filtered {
+  display: none;
 }

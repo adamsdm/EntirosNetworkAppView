@@ -31,8 +31,16 @@
 
 	<div id="search-wrapper">
     	<input type="text" class="form-control" id="search" autofocus placeholder="Search">
-  	</div>
-  	<div id="info"></div>
+  </div>
+  <div id="info"></div>
+
+  <button id="filter" class="btn btn-default"><i class="fa fa-filter"></i></button>
+
+  <div id="filters" style="display:none">
+    <strong>Integrations</strong>
+    <input id="badIntEdges" type="checkbox" checked></input><label for="badIntEdges">Bad integration</label><br />
+    <input id="goodIntEdges" type="checkbox" checked></input><label for="goodIntEdges">Good integration</label><br />
+  </div>  
 
 	<button id="addExperience">Add Experience</button>
 	<button id="addProcess">Add process</button>

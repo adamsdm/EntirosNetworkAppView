@@ -32,6 +32,9 @@ Promise.all([ graphP, styleP ]).then(initCy);
 function initCy( then ){
   var expJson = then[0];
   var styleJson = then[1];
+  var hash = window.location.hash.substring(1);
+  console.log(hash);
+
 
   cy = cytoscape({
     container: document.getElementById('cy'),
@@ -52,40 +55,58 @@ function initCy( then ){
 
       ],
       edges: [
-        { data: { type: 'eShape', source: 'a', target: 'aEnd' } },
-        { data: { type: 'eShape', source: 'b', target: 'bEnd' } },
-        { data: { type: 'eShape', source: 'c', target: 'cEnd' } },
+        { data: { type: 'eShape', source: 'a', target: 'aEnd', id: 'EtopBar' } },
+        { data: { type: 'eShape', source: 'b', target: 'bEnd', id: 'EmidBar'  } },
+        { data: { type: 'eShape', source: 'c', target: 'cEnd', id: 'EbotBar'  } },
         { data: { type: 'eShape', source: 'a', target: 'c' } },
       ]
     },
     
     layout: theLayout
   });
+  
 
+  /**
+   * Searches for comp with name compName in data file
+   * @param  {string} compName    [the company name/id]
+   * @return {[jsonObj, bool]}    [Returns the data object if found, else returns false]
+   */
+  function getCompData(compName){
+    for(var i=0; i<expJson.length; i++){
+      if(expJson[i].id==hash)
+        return expJson[i];
+    }
+    return false;
+  }
+
+  if (hash){
+      var comp = getCompData(hash);
+
+    if (comp)
+      readData2(comp);
+    else
+      alert("Company with name "+hash+" not found in dataset.");
+  }
 
   //Event listeners
   cy.on('select', 'node', function(e){
     var node = this;
 
+    console.log(node.data());
     showNodeInfo(node);
-    node.select();
   });
 
+  cy.on('select', 'edge', function(e){
+    var edge = this;
+
+    console.log(edge.data());
+  });
 }
 
 
 var infoTemplate = Handlebars.compile([
-  '<p class="ac-name">{{id}}</p>',
-  '{{#if NodeType}}<p class="ac-node-type"><i class="fa fa-info-circle"></i> {{NodeType}}</p>{{/if}}',
-  '{{#if Country}}<p class="ac-country"><i class="fa fa-map-marker"></i> {{Country}}</p>{{/if}}',
-  '{{#if WebsiteURL}}<p class="ac-more"><i class="fa fa-external-link"></i><a target="_blank" href="http://www.{{WebsiteURL}}">{{id}}</a></p>{{/if}}',
-  '{{#if AnnRevenue}}<p class="ac-more"><i class="fa fa-usd"></i> {{AnnRevenue}}</p>{{/if}}',
-  '{{#if CompanyType}}<p class="ac-more"><i class="fa fa-usd"></i> {{CompanyType}}</p>{{/if}}',    
-
+  '<p class="ac-name">{{id}}</p>',   
 ].join(''));
-
-
-
 
 
 
@@ -154,11 +175,10 @@ var addSystem = function(){
 }
 
 var addApp = function(_appId){
-  console.log("Add App"); 
 
   noApps++;
   var position={ x: noApps*60, y: 275 };
-  if(position.x > cy.$('#aEnd').position().x){
+  if(position.x > cy.$('#aEnd').position().x-60){
     cy.$('#aEnd').position().x += 60;
     cy.$('#bEnd').position().x += 60;
     cy.$('#cEnd').position().x += 60;
@@ -191,12 +211,8 @@ $('#addProcess').on('click', function(){
   addProcess();
 })
 $('#debug').on('click', function(){
-  var data = graphP.responseJSON;
-  reset();
-
-  for(var i=0; i<data[0].Applications.length; i++){
-    addApp(String(data[0].Applications[i]));
-  }
+  readData2(graphP.responseJSON[1]);
+  cy.layout(theLayout);
 })
 
 $('#clear').on('click', function(){
@@ -205,15 +221,40 @@ $('#clear').on('click', function(){
 
 
 
+
+
+
+
+
+
+
 function showNodeInfo( node ){
   $('#info').html( infoTemplate( node.data() ) ).show();
 }
 
 function reset(){
+
   cy.remove( cy.elements("node[type != 'eShape']") );
   cy.$('#aEnd').position().x = 200;
   cy.$('#bEnd').position().x = 175;
   cy.$('#cEnd').position().x = 200;
+
+  cy.$("#bEnd").style({
+    'height': 30
+  })
+
+  //middle bar width
+  cy.$("#EmidBar").style({ 
+      'width': 30
+  })
+
+  //move top bar to initial position
+  cy.$('#a').position().y = 0;
+  cy.$('#aEnd').position().y = 0;
+
+  //move middle bar to initial position
+  cy.$('#b').position().y=100;
+  cy.$('#bEnd').position().y=100;
 
   noApps = 0;
   noSyst = 0;
@@ -222,6 +263,101 @@ function reset(){
 
   cy.layout(theLayout);  
 }
+
+
+//*************************************//
+//*** Connection points on the side ***//
+//*************************************//
+
+function readData( data ){
+  reset();
+
+  //Add application nodes
+  for(var i=0; i<data.Applications.length; i++){
+    addApp(String(data.Applications[i]));
+  }
+
+  //Add application connections
+  for(var i=0; i<data.edges.length; i++){
+    //Add connectionPoints
+    cy.add([
+      { group: "nodes", data: { type: 'conPointNode', id:'conP'+i}, position: {x: cy.$('#aEnd').position().x + 70, y: i*200/data.edges.length } }, //Connection point
+
+      { group: "edges", data: { source: data.edges[i].source, target: data.edges[i].target, type: 'spaghEdge' } },  //Spaghetti edge
+      { group: "edges", data: { source: data.edges[i].source, target: 'conP'+i, type: 'goodIntEdge' } },            //int edge source->conP
+      { group: "edges", data: { source: 'conP'+i, target: data.edges[i].target, type: 'goodIntEdge' } }             //int edge source->conP
+    ]);
+
+    //Add the integration edge
+    cy.add({ 
+      group: "edges", 
+      data: { source: data.edges[i].source, target: data.edges[i].target, type: 'spaghEdge' } 
+    });
+  }
+}
+
+//*************************************//
+//** Connection points in middle bar **//
+//*************************************//
+function readData2( data ){
+  reset();
+
+  //Add application nodes
+  for(var i=0; i<data.Applications.length; i++){
+    addApp(String(data.Applications[i]));
+  }
+
+  //Add application connections
+  //for each edge
+  for(var i=0; i<data.edges.length; i++){
+    var sourceConPosX = cy.$('#'+String(data.edges[i].source)).position().x;
+    var targetConPosX = cy.$('#'+String(data.edges[i].target)).position().x;
+
+    //Connection points
+    incMidBarWidth();
+    cy.add([
+      { group: "nodes", data: { type: 'conPointNode', id:'sConP'+i}, position: {x: sourceConPosX, y: 100-i*15 } },
+      { group: "nodes", data: { type: 'conPointNode', id:'tConP'+i}, position: {x: targetConPosX, y: 100-i*15 } },
+
+      { group: "edges", data: { source: data.edges[i].source, target: 'sConP'+i, type: 'goodIntEdge' } },
+      { group: "edges", data: { source: 'sConP'+i, target: 'tConP'+i, type: 'goodIntEdge' } },
+      { group: "edges", data: { source: 'tConP'+i, target: data.edges[i].target, type: 'goodIntEdge' } },
+      { group: "edges", data: { source: data.edges[i].source, target: data.edges[i].target, type: 'spaghEdge' } }
+    ]);
+  }
+}
+
+
+
+//Increases the middle bar width and moves top bar up
+function incMidBarWidth(){
+  var currH = parseInt( cy.$("#bEnd").style().height );
+  var stepSize=15;
+  var newH = currH+stepSize;
+
+  cy.$("#bEnd").style({
+      'height': currH+stepSize
+    })
+
+  //middle bar width
+  cy.$("#EmidBar").style({ 
+      'width': currH+stepSize
+  })
+
+  //move middle bar
+  cy.$('#b').position().y-=stepSize/2;
+  cy.$('#bEnd').position().y-=stepSize/2;
+
+  //move top bar
+  cy.$('#a').position().y -= stepSize;
+  cy.$('#aEnd').position().y -= stepSize;
+
+  cy.layout(theLayout);
+}
+
+
+
+
 
 
 
@@ -289,6 +425,156 @@ $('#search').typeahead({
   console.log(n.selected());
   showNodeInfo( n );
 });
+
+$('#filters').on('click', 'input', function(){
+    
+    var badIntEdges = $('#badIntEdges').is(':checked');
+    var goodIntEdges = $('#goodIntEdges').is(':checked');
+
+
+
+
+
+  cy.batch(function(){
+    cy.elements().forEach(function( n ){
+      var type = n.data('type');
+
+      n.removeClass('filtered');
+      
+      var filter = function(){
+        n.addClass('filtered');
+      };
+
+      if( type === 'goodIntEdge' || type === 'conPointNode' ){
+        
+        if( !goodIntEdges ){ filter(); }
+        
+      } else if( type === 'spaghEdge' ){
+        
+        if( !badIntEdges ){ filter(); }
+        
+      }  
+    });
+    // cy.nodes().forEach(function( n ){
+    //   var type = n.data('NodeType');
+    //   var CompanyType = n.data('CompanyType');
+
+    //   n.removeClass('filtered');
+      
+    //   var filter = function(){
+    //     n.addClass('filtered');
+    //   };
+
+    //   if( type === 'Customer' ){
+        
+    //     if( !cust ){ filter(); }
+        
+    //   } else if( type === 'Evangelist' ){
+        
+    //     if( !evan ){ filter(); }
+        
+    //   } else if( type === 'Subscriber' ){
+        
+    //     if( !subs ){ filter(); }
+        
+    //   } else if( type === 'Lead' ){
+        
+    //     if( !lead ){ filter(); }
+        
+    //   } else if( type === 'Marketing Qualified Lead' ){
+        
+    //     if( !markQualLead ){ filter(); }
+        
+    //   } else if( type === 'Sales Qualified Lead' ){
+        
+    //     if( !saleQualLead ){ filter(); }
+        
+    //   } else if( type === 'Prospect' ){
+        
+    //     if( !prosp ){ filter(); }
+    //   }
+
+
+
+
+
+
+    //   if( CompanyType === 'Clothing' ){
+        
+    //     if( !cloth ){ filter(); }
+        
+    //   } else if( CompanyType === 'Cars' ){
+        
+    //     if( !cars ){ filter(); }
+        
+    //   } else if( CompanyType === 'Food' ){
+        
+    //     if( !food ){ filter(); }
+        
+    //   } else if( CompanyType === 'Electronics' ){
+        
+    //     if( !elect ){ filter(); }
+        
+    //   } else if( CompanyType === 'Candy' ){
+        
+    //     if( !candy ){ filter(); }
+        
+    //   }   
+    // });
+  }); 
+  
+});
+
+$('#appFilter').on('click', 'input', function(){
+
+  var app = $('#app').is(':checked');
+
+
+  cy.batch(function(){
+    
+    cy.nodes().forEach(function( n ){
+      var type = n.data('NodeType');
+      
+      n.removeClass('filtered');
+      
+      var filter = function(){
+        n.addClass('filtered');
+      };
+
+      if( type === 'Application' ){
+        
+        if( !app ){ filter(); }
+        
+      } 
+    });
+  }); 
+});
+
+$('#filter').qtip({
+  position: {
+    my: 'top center',
+    at: 'bottom center'
+  },
+  
+  show: {
+    event: 'click'
+  },
+  
+  hide: {
+    event: 'unfocus'
+  },
+  
+  style: {
+    classes: 'qtip-bootstrap',
+    tip: {
+      width: 16,
+      height: 8
+    }
+  },
+
+  content: $('#filters')
+});
+
 
 }); // on dom ready
 

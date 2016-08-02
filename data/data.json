@@ -1,0 +1,12 @@
+[
+  {
+    "id": "Gant",
+    "type":"Customer",
+    "Applications": ["En applikation","En annan applikation med ett långt namn","Appen","En till","och en sista"]
+  },
+  {
+    "id": "Schibsted",
+    "type":"Customer",
+    "Applications": [51,52,53,54,55]
+  }
+]

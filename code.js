@@ -94,15 +94,19 @@ var infoTemplate = Handlebars.compile([
 
 var addExperience = function(){
   console.log("Add Experience");
-  var aEnd = cy.$('#aEnd');
 
-  aEnd.position().x += 75;
   noExpe++;
+  var position={ x: noExpe*60, y: 0 };
+  if(position.x > cy.$('#aEnd').position().x){
+    cy.$('#aEnd').position().x += 60;
+    cy.$('#bEnd').position().x += 60;
+    cy.$('#cEnd').position().x += 60;
+  }
 
   cy.add({
     group: "nodes",
     data: { id: "Exp"+noExpe },
-    position: { x: aEnd.position().x-25, y: 0 },
+    position: position
   });
 
   cy.layout( theLayout );
@@ -110,15 +114,19 @@ var addExperience = function(){
 
 var addProcess = function(){
   console.log("Add Process");
-  var bEnd = cy.$('#bEnd');
 
-  bEnd.position().x += 75;
   noProc++;
+  var position={ x: noProc*60, y: 100 };
+  if(position.x > cy.$('#aEnd').position().x){
+    cy.$('#aEnd').position().x += 60;
+    cy.$('#bEnd').position().x += 60;
+    cy.$('#cEnd').position().x += 60;
+  }
 
   cy.add({
     group: "nodes",
     data: { id: "Proc"+noProc },
-    position: { x: bEnd.position().x-25, y: 100 }
+    position: position
   });
 
   cy.layout( theLayout );
@@ -126,16 +134,20 @@ var addProcess = function(){
 
 var addSystem = function(){
   console.log("Add System");
-  console.log(graphP);
-  var cEnd = cy.$('#cEnd');
 
-  cEnd.position().x += 75;
+
   noSyst++;
+  var position={ x: noSyst*60, y: 200 };
+  if(position.x > cy.$('#aEnd').position().x){
+    cy.$('#aEnd').position().x += 60;
+    cy.$('#bEnd').position().x += 60;
+    cy.$('#cEnd').position().x += 60;
+  }
 
   cy.add({
     group: "nodes",
     data: { id: "Syst"+noSyst },
-    position: { x: cEnd.position().x-25, y: 200 }
+    position: position
   });
 
   cy.layout( theLayout );
@@ -143,14 +155,13 @@ var addSystem = function(){
 
 var addApp = function(_appId){
   console.log("Add App"); 
-  console.log(25+noApps*50); 
 
   noApps++;
   var position={ x: noApps*60, y: 275 };
-  if(position.x > 175){
-    cy.$('#aEnd').position().x += 50;
-    cy.$('#bEnd').position().x += 50;
-    cy.$('#cEnd').position().x += 50;
+  if(position.x > cy.$('#aEnd').position().x){
+    cy.$('#aEnd').position().x += 60;
+    cy.$('#bEnd').position().x += 60;
+    cy.$('#cEnd').position().x += 60;
   }
 
   cy.add({
